@@ -9,7 +9,6 @@ services:
     name: dating-itinerary-builder-backend
     env: docker
     plan: free
-    region: singapore
     branch: main
     healthCheckPath: /health
     envVars:
