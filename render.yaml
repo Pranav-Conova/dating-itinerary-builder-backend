@@ -1,17 +1,21 @@
+databases:
+  - name: dib-db
+    plan: free
+    databaseName: dib
+    user: dib
+
 services:
   - type: web
     name: dating-itinerary-builder-backend
     env: docker
-    plan: starter
+    plan: free
     region: singapore
     branch: main
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
-        value: sqlite:////app/data/app.db
+        fromDatabase:
+          name: dib-db
+          property: connectionString
       - key: CORS_ORIGINS
         value: "*"
-    disk:
-      name: sqlite-data
-      mountPath: /app/data
-      sizeGB: 1
