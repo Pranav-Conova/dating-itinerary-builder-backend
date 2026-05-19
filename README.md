@@ -1,12 +1,13 @@
 # Dating Itinerary Builder — Backend
 
-FastAPI + SQLite backend for building dating itineraries. Companion to [dating-itinerary-builder-frontend](https://github.com/Pranav-Conova/dating-itinerary-builder-frontend).
+FastAPI backend for building dating itineraries. Companion to [dating-itinerary-builder-frontend](https://github.com/Pranav-Conova/dating-itinerary-builder-frontend).
 
 ## Stack
 - Python 3.12
 - FastAPI
-- SQLAlchemy 2.x + SQLite
+- SQLAlchemy 2.x
 - Pydantic v2
+- **SQLite** locally / **Postgres** on Render (selected automatically via `DATABASE_URL`)
 
 ## Local dev
 
@@ -15,7 +16,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-Interactive API docs: http://localhost:8000/docs
+With no `DATABASE_URL` set, the app uses SQLite at `data/app.db` (the directory is auto-created). Interactive API docs: http://localhost:8000/docs
 
 ## Docker
 
@@ -24,17 +25,21 @@ docker build -t dib-backend .
 docker run -p 8000:8000 -v $(pwd)/data:/app/data dib-backend
 ```
 
-The SQLite file lives at `data/app.db` (volume-mounted, so it survives container restarts).
+## Deploy on Render (free tier)
 
-## Deploy on Render
+The included `render.yaml` provisions both a free **Postgres** instance and a free **Web Service** in one click:
 
-1. Connect this repo as a **Web Service**.
-2. Render auto-detects `render.yaml`.
-3. **SQLite + Render caveat**: Render's free filesystem is ephemeral — data is wiped on each deploy. The included `render.yaml` mounts a 1 GB persistent disk (Starter plan) at `/app/data` to keep your SQLite file safe. If you'd rather use the free tier, swap SQLite for Render's free managed Postgres:
-   - Provision a Postgres instance on Render.
-   - Set the env var `DATABASE_URL` to the Render-provided connection string.
-   - Add `psycopg2-binary` to `requirements.txt`.
-   - `app/database.py` already reads `DATABASE_URL` and adapts.
+1. Push to GitHub (done if you're reading this).
+2. Render dashboard → **New** → **Blueprint** → pick this repo.
+3. Render reads `render.yaml`, shows the proposed Postgres + Web Service, click **Apply**.
+4. After ~3 min, your API is live at `https://<service>.onrender.com`. Confirm with `<url>/health` and `<url>/docs`.
+
+The Web Service receives the Postgres URL via the `DATABASE_URL` env var (auto-wired by `fromDatabase` in `render.yaml`), and `app/database.py` picks it up at startup.
+
+### Free tier caveats
+- **Postgres**: Render's free Postgres expires after **90 days**. After that you must upgrade (~$7/mo) or migrate your data, or your DB is suspended.
+- **Web service**: spins down after 15 min of inactivity. First request after a sleep cold-starts in ~30s.
+- **CORS**: the default `render.yaml` sets `CORS_ORIGINS=*`. Once your frontend is up, tighten this to your exact frontend URL in the Render dashboard.
 
 ## Data model
 
